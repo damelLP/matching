@@ -34,12 +34,12 @@ def test_stable_marriage(suitor_preferences, reviewer_preferences):
     """ Assert that the Gale-Shapley algorithm produces a valid solution to an
     uncapacitated matching game. """
 
-    for party in ['suitor', 'reviewer']:
+    for party in ["suitor", "reviewer"]:
         matching = stable_marriage(
             suitor_preferences, reviewer_preferences, optimal=party
         )
 
-        if party == 'suitor':
+        if party == "suitor":
             assert set(suitor_preferences.keys()) == set(matching.keys())
             assert set(reviewer_preferences.keys()) == set(matching.values())
 
@@ -85,7 +85,7 @@ def _make_hospital_prefs(resident_prefs):
         for h in hospitals
     }
 
-    return hospital_prefs
+    return dict(sorted(hospital_prefs.items()))
 
 
 @given(
@@ -105,26 +105,33 @@ def _make_hospital_prefs(resident_prefs):
 )
 @settings(deadline=None)
 def test_hospital_resident(resident_preferences, capacities, seed):
-    """ Verify that the resident-optimal, hospital-resident algorithm produces a
-    valid matching. """
+    """ Verify that the hospital-resident algorithm produces a valid matching
+    for both the resident- and hospital-optimal algorithms. """
 
-    if all(resident_preferences.values()):
-        np.random.seed(seed)
+    resident_preferences = dict(sorted(resident_preferences.items()))
 
-        hospital_preferences = _make_hospital_prefs(resident_preferences)
-        matching = hospital_resident(
-            hospital_preferences, resident_preferences, capacities
-        )
+    for party in ["resident", "hospital"]:
+        if all(resident_preferences.values()):
+            np.random.seed(seed)
 
-        assert set(hospital_preferences.keys()) == set(matching.keys())
-        for hospital, matches in matching.items():
-            old_idx = -np.infty
-            for resident in matches:
-                idx = hospital_preferences[hospital].index(resident)
-                assert idx >= old_idx
-                old_idx = idx
-    else:
-        pass
+            hospital_preferences = _make_hospital_prefs(resident_preferences)
+            matching = hospital_resident(
+                hospital_preferences,
+                resident_preferences,
+                capacities,
+                optimal=party,
+            )
+
+            assert set(hospital_preferences.keys()) == set(matching.keys())
+
+            for hospital, matches in matching.items():
+                old_idx = -np.infty
+                for resident in matches:
+                    idx = hospital_preferences[hospital].index(resident)
+                    assert idx >= old_idx
+                    old_idx = idx
+        else:
+            pass
 
 
 def test_hospital_resident_raises_error():
@@ -132,22 +139,20 @@ def test_hospital_resident_raises_error():
     residents that rank it. """
 
     resident_preferences = {
-        'A': ['C'],
-        'S': ['C', 'M'],
-        'J': ['C', 'G', 'M'],
-        'L': ['M', 'C', 'G'],
-        'D': ['C', 'M', 'G']
+        "A": ["C"],
+        "S": ["C", "M"],
+        "J": ["C", "G", "M"],
+        "L": ["M", "C", "G"],
+        "D": ["C", "M", "G"],
     }
 
     hospital_preferences = {
-        'M': ['D', 'J'], # M should rank S and L as well.
-        'C': ['D', 'A', 'S', 'L', 'J'],
-        'G': ['D', 'A', 'J', 'L']
+        "M": ["D", "J"],  # M should rank S and L as well.
+        "C": ["D", "A", "S", "L", "J"],
+        "G": ["D", "A", "J", "L"],
     }
 
-    capacities = {
-        hospital: 2 for hospital in hospital_preferences
-    }
+    capacities = {hospital: 2 for hospital in hospital_preferences}
 
     with pytest.raises(ValueError):
         hospital_resident(
