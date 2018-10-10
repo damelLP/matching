@@ -12,6 +12,15 @@ def _check_inputs(hospital_prefs, resident_prefs):
                     "Hospitals must rank all residents who rank them."
                 )
 
+    for hospital in hospital_prefs.keys():
+        for resident in hospital_prefs[hospital]:
+            if hospital not in resident_prefs[resident]:
+                raise ValueError(
+                    "Hospitals may only rank those residents that have ranked "
+                    f"them.\n Here, {hospital} has ranked {resident} but not "
+                    "the other way around."
+                )
+
 
 def _get_free_residents(resident_prefs, matching):
     """ Return a list of all residents who are currently unmatched but have a
@@ -75,7 +84,7 @@ def hr_resident_optimal(hospital_prefs, resident_prefs, capacities):
         A dictionary with residents as keys and their associated preference
         lists as values.
     capacities : dict
-        A dictionary of hospitals and their associated capacities.
+        A dictionary of hospitals and their associated capacity.
 
     Returns
     -------
@@ -155,6 +164,19 @@ def hr_hospital_optimal(hospital_prefs, resident_prefs, capacities):
 
             - Remove :math:`r` from the preference list of :math:`h'`, and vice
               versa.
+
+        6. Go to 2 until there are no such hospitals, then end.
+
+    Parameters
+    ----------
+    hospital_prefs : dict
+        A dictionary with hospitals as keys and their associated preference
+        lists as values.
+    resident_prefs : dict
+        A dictionary with residents as keys and their associated preference
+        lists as values.
+    capacities : dict
+        A dictionary of hospitals and their associated capacity.
     """
     matching = {h: [] for h in hospital_prefs}
     free_hospitals = _get_free_hospitals(hospital_prefs, capacities, matching)
@@ -175,10 +197,9 @@ def hr_hospital_optimal(hospital_prefs, resident_prefs, capacities):
         idx = resident_prefs[resident].index(hospital)
         successors = resident_prefs[resident][idx + 1 :]
 
-        if successors:
-            for successor in successors:
-                hospital_prefs[successor].remove(resident)
-                resident_prefs[resident].remove(successor)
+        for successor in successors:
+            hospital_prefs[successor].remove(resident)
+            resident_prefs[resident].remove(successor)
 
         free_hospitals = _get_free_hospitals(
             hospital_prefs, capacities, matching

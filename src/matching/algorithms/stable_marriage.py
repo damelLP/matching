@@ -65,9 +65,9 @@ def stable_marriage(suitor_prefs, reviewer_prefs, optimal="suitor"):
 
         idx = reviewer_prefs[reviewer].index(suitor)
         successors = reviewer_prefs[reviewer][idx + 1 :]
-        if successors:
-            for successor in successors:
-                reviewer_prefs[reviewer].remove(successor)
-                suitor_prefs[successor].remove(reviewer)
+
+        for successor in successors:
+            reviewer_prefs[reviewer].remove(successor)
+            suitor_prefs[successor].remove(reviewer)
 
     return matching
